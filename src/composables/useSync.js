@@ -142,6 +142,11 @@ async function verifyCode(email, input) {
       return false
     }
     result = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'email' })
+    if (result.error) {
+      // Some configurations expect the link's own type instead.
+      const retry = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'magiclink' })
+      if (!retry.error) result = retry
+    }
   } else {
     result = await supabase.auth.verifyOtp({ email, token: raw, type: 'email' })
   }
