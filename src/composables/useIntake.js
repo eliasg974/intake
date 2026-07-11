@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { keyOf, shifted, lastNDays } from '../utils/dates'
-import { read, write, onWrite, dataKeys } from '../lib/kv'
+import { read, write, onWrite, dataKeys, has } from '../lib/kv'
 
 /*
  * Shared store built from module-scoped refs — every component that
@@ -43,8 +43,14 @@ watch(cursor, (d) => {
   entries.value = read(LS.day(keyOf(d)), [])
 })
 
-// When entries change, save them under the viewed day's key.
-watch(entries, (e) => write(LS.day(keyOf(cursor.value)), e), { deep: true })
+// When entries change, save them under the viewed day's key —
+// but browsing an empty day must not create an empty record
+// (deleting the last entry of an existing day still saves).
+watch(entries, (e) => {
+  const key = LS.day(keyOf(cursor.value))
+  if (e.length === 0 && !has(key)) return
+  write(key, e)
+}, { deep: true })
 
 /*
  * When sync pulls newer data from the server, reload the refs that

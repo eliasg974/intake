@@ -87,6 +87,11 @@ export function dataKeys() {
   return out
 }
 
+/** Does the key exist in storage at all? */
+export function has(key) {
+  try { return localStorage.getItem(key) !== null } catch { return false }
+}
+
 /* ---------- dirty queue (offline pushes) ---------- */
 
 export function markDirty(key) {
@@ -104,3 +109,28 @@ export function clearDirty(keys) {
   keys.forEach((k) => d.delete(k))
   rawSet(DIRTY, [...d])
 }
+
+/* ---------- migration: stamp pre-existing data ----------
+ * Keys written before timestamps existed have no stamp, which made
+ * them lose every merge ("no stamp" read as "oldest"). Give any
+ * unstamped NON-EMPTY key a fresh stamp and queue it for push, so
+ * real history wins against accidental empty records. Empty values
+ * are left unstamped on purpose: a fresh device full of [] must not
+ * outrank the server. Runs once per device (no-op afterwards).
+ */
+function isEmptyValue(v) {
+  return v == null || (Array.isArray(v) && v.length === 0)
+}
+
+;(function backfillStamps() {
+  const m = rawGet(META, {})
+  let changed = false
+  for (const k of dataKeys()) {
+    if (!m[k] && !isEmptyValue(rawGet(k, null))) {
+      m[k] = new Date().toISOString()
+      markDirty(k)
+      changed = true
+    }
+  }
+  if (changed) rawSet(META, m)
+})()
