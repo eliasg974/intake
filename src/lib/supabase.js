@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js";
 
 /*
  * Configured via environment variables (in .env.local for dev, and in
@@ -11,7 +11,12 @@ import { createClient } from '@supabase/supabase-js'
  * sync UI shows "not configured" and nothing else changes.
  */
 
-const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const url = import.meta.env.VITE_SUPABASE_URL;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = url && anonKey ? createClient(url, anonKey) : null
+export const supabase =
+	url && anonKey
+		? createClient(url, anonKey, {
+				auth: { flowType: "implicit", detectSessionInUrl: true },
+			})
+		: null;
