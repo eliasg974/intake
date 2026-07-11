@@ -50,15 +50,15 @@ const statusText = computed(() => {
     <div v-else-if="!user" class="card">
       <template v-if="linkSent">
         <p class="hint ok">
-          Email sent to {{ email }} — tap the link, or type the 6-digit code here:
+          Email sent to {{ email }} — long-press the "Sign in" link, Copy Link, and paste it here:
         </p>
         <div class="row">
           <input
-            v-model="code" inputmode="numeric" autocomplete="one-time-code"
-            placeholder="123456" maxlength="6" @keydown.enter="onVerify"
+            v-model="code" autocomplete="one-time-code" autocapitalize="off"
+            placeholder="paste sign-in link (or 6-digit code)" @keydown.enter="onVerify"
           >
           <button class="b" :disabled="verifying" @click="onVerify">
-            {{ verifying ? 'Checking…' : 'Verify code' }}
+            {{ verifying ? 'Checking…' : 'Verify' }}
           </button>
         </div>
         <p v-if="errorMsg" class="hint err">{{ errorMsg }}</p>

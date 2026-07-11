@@ -122,16 +122,31 @@ async function signOut() {
   status.value = 'signedout'
 }
 
-/** Sign in with the 6-digit code from the email (needed inside the iPhone PWA, where tapping the link would open Safari instead). */
-async function verifyCode(email, token) {
+/**
+ * Sign in from inside the app (needed in the iPhone PWA, where tapping
+ * the email link would open Safari instead). Accepts either the 6-digit
+ * code, or the full sign-in link pasted from the email — the link
+ * contains a token we can verify directly.
+ */
+async function verifyCode(email, input) {
   errorMsg.value = ''
-  const { error } = await supabase.auth.verifyOtp({
-    email,
-    token: token.trim(),
-    type: 'email',
-  })
-  if (error) {
-    errorMsg.value = error.message
+  const raw = input.trim()
+  let result
+  if (raw.startsWith('http') || raw.includes('token=')) {
+    let tokenHash = null
+    try {
+      tokenHash = new URL(raw).searchParams.get('token')
+    } catch { /* not a valid URL */ }
+    if (!tokenHash) {
+      errorMsg.value = "Couldn't read that link — copy the full sign-in link from the email"
+      return false
+    }
+    result = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'email' })
+  } else {
+    result = await supabase.auth.verifyOtp({ email, token: raw, type: 'email' })
+  }
+  if (result.error) {
+    errorMsg.value = result.error.message
     return false
   }
   return true
